@@ -1,0 +1,58 @@
+# Vagrantfile para Debian 12 com Docker
+Vagrant.configure("2") do |config|
+  
+    # Escolhe a box do Debian 12
+    config.vm.box = "debian/bookworm64"
+    
+    config.vm.synced_folder "./data", "/home/vagrant/data"
+
+    # Configurações da máquina virtual
+    config.vm.provider "virtualbox" do |vb|
+      vb.memory = "3072"
+      vb.cpus = 4
+    end
+
+   # Configura o hostname
+    config.vm.hostname = "debian"
+  
+    # Configura a rede
+    #config.vm.network "private_network", type: "dhcp"
+    config.vm.network "public_network"
+
+
+    #Script de provisionamento para instalar o Docker
+      config.vm.provision "shell", inline: <<-SHELL
+      # Atualiza os pacotes
+      apt-get update
+  
+      # Instala pacotes necessários
+      apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+  
+      # Adiciona a chave GPG oficial do Docker
+      curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+  
+      # Adiciona o repositório do Docker
+      echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  
+      # Atualiza os pacotes novamente
+      apt-get update
+  
+      # Instala o Docker
+      apt-get install -y docker-ce docker-ce-cli containerd.io
+  
+      # Adiciona o usuário vagrant ao grupo docker para evitar uso de sudo
+      usermod -aG docker vagrant
+      
+     # Instala tools
+     apt-get install -y htop iotop iputils-ping inetutils-traceroute iproute2 curl telnet dnsutils nano fio
+
+  
+      # Habilita e inicia o serviço do Docker
+      systemctl enable docker
+      systemctl start docker
+
+
+    SHELL
+    
+  end
+  
